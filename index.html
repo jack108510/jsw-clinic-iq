@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clinic IQ - Price Management Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --success: #059669;
+            --warning: #d97706;
+            --danger: #dc2626;
+            --dark: #0f172a;
+            --dark-surface: #1e293b;
+            --text: #f9fafb;
+            --text-muted: #9ca3af;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--dark); color: var(--text); min-height: 100vh; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .header h1 { font-size: 1.8rem; display: flex; align-items: center; gap: 12px; }
+        .logo-text { background: linear-gradient(135deg, #10b981, #059669); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 30px; }
+        .stat-card { background: var(--dark-surface); padding: 20px; border-radius: 12px; text-align: center; }
+        .stat-value { font-size: 2rem; font-weight: 700; }
+        .stat-value.green { color: var(--success); }
+        .stat-value.yellow { color: var(--warning); }
+        .stat-label { font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; }
+        
+        .section { background: var(--dark-surface); border-radius: 16px; padding: 24px; margin-bottom: 24px; }
+        .section-title { font-size: 1.2rem; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+        
+        .service-table { width: 100%; border-collapse: collapse; }
+        .service-table th { text-align: left; padding: 12px; border-bottom: 2px solid #374151; color: var(--text-muted); font-weight: 500; font-size: 0.85rem; }
+        .service-table td { padding: 14px 12px; border-bottom: 1px solid #374151; }
+        .service-table tr:hover { background: rgba(37, 99, 235, 0.1); }
+        
+        .price-current { font-weight: 600; }
+        .price-suggested { color: var(--success); font-weight: 600; }
+        .price-change { font-size: 0.85rem; color: var(--success); }
+        
+        .status-badge { padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+        .status-ok { background: rgba(5, 150, 105, 0.2); color: var(--success); }
+        .status-warning { background: rgba(217, 119, 6, 0.2); color: var(--warning); }
+        .status-excluded { background: rgba(156, 163, 175, 0.2); color: var(--text-muted); }
+        
+        .impact-positive { color: var(--success); }
+        
+        .btn { padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        
+        .filter-bar { display: flex; gap: 12px; margin-bottom: 20px; }
+        .filter-select { padding: 10px 16px; border-radius: 8px; border: 1px solid #374151; background: var(--dark-surface); color: var(--text); }
+        
+        @media (max-width: 1024px) { .stats-row { grid-template-columns: repeat(2, 1fr); } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><span class="logo-text">🏥 Clinic IQ</span> - Price Management Dashboard</h1>
+            <button class="btn btn-primary"><i class="fas fa-download"></i> Export Report</button>
+        </div>
+        
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-value" id="totalServices">0</div>
+                <div class="stat-label">Total Services</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value yellow" id="inflationLag">0</div>
+                <div class="stat-label">Inflation Lag</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value green" id="projectedGain">$0</div>
+                <div class="stat-label">Projected Annual Gain</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="pendingChanges">0</div>
+                <div class="stat-label">Pending Approval</div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2 class="section-title"><i class="fas fa-search"></i> Service Price Analysis</h2>
+            
+            <div class="filter-bar">
+                <select class="filter-select" id="categoryFilter">
+                    <option value="">All Categories</option>
+                    <option value="wellness">Wellness Exams</option>
+                    <option value="diagnostics">Diagnostics</option>
+                    <option value="surgery">Surgery</option>
+                    <option value="dentistry">Dentistry</option>
+                    <option value="pharmacy">Pharmacy</option>
+                </select>
+                <select class="filter-select" id="statusFilter">
+                    <option value="">All Status</option>
+                    <option value="ok">Current</option>
+                    <option value="warning">Needs Update</option>
+                    <option value="excluded">Excluded</option>
+                </select>
+                <button class="btn btn-success" onclick="approveSelected()">Approve Selected</button>
+            </div>
+            
+            <table class="service-table">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="selectAll"></th>
+                        <th>Service</th>
+                        <th>Category</th>
+                        <th>Last Updated</th>
+                        <th>Current Price</th>
+                        <th>Suggested Price</th>
+                        <th>Change</th>
+                        <th>Annual Impact</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="servicesList"></tbody>
+            </table>
+        </div>
+        
+        <div class="section">
+            <h2 class="section-title"><i class="fas fa-chart-line"></i> Revenue Impact Summary</h2>
+            <div id="impactSummary"></div>
+        </div>
+    </div>
+    
+    <script>
+        // Sample clinic services data
+        const services = [
+            { id: 1, name: 'Wellness Exam - Cat', category: 'wellness', lastUpdated: '2024-01-15', currentPrice: 65, suggestedPrice: 65, inflationRate: 0, volume: 520, excluded: true },
+            { id: 2, name: 'Wellness Exam - Dog', category: 'wellness', lastUpdated: '2024-01-15', currentPrice: 75, suggestedPrice: 75, inflationRate: 0, volume: 680, excluded: true },
+            { id: 3, name: 'Blood Work - Basic Panel', category: 'diagnostics', lastUpdated: '2022-06-01', currentPrice: 120, suggestedPrice: 155, inflationRate: 0.08, volume: 340, excluded: false },
+            { id: 4, name: 'Blood Work - Full Panel', category: 'diagnostics', lastUpdated: '2022-03-15', currentPrice: 185, suggestedPrice: 245, inflationRate: 0.10, volume: 180, excluded: false },
+            { id: 5, name: 'Spay - Cat (under 10lbs)', category: 'surgery', lastUpdated: '2023-01-10', currentPrice: 295, suggestedPrice: 345, inflationRate: 0.05, volume: 120, excluded: false },
+            { id: 6, name: 'Spay - Dog (10-25lbs)', category: 'surgery', lastUpdated: '2023-01-10', currentPrice: 385, suggestedPrice: 450, inflationRate: 0.05, volume: 95, excluded: false },
+            { id: 7, name: 'Dental Cleaning - Cat', category: 'dentistry', lastUpdated: '2021-08-20', currentPrice: 195, suggestedPrice: 285, inflationRate: 0.12, volume: 75, excluded: false },
+            { id: 8, name: 'Dental Cleaning - Dog', category: 'dentistry', lastUpdated: '2021-08-20', currentPrice: 225, suggestedPrice: 325, inflationRate: 0.12, volume: 110, excluded: false },
+            { id: 9, name: 'X-Ray - 2 View', category: 'diagnostics', lastUpdated: '2022-11-01', currentPrice: 145, suggestedPrice: 185, inflationRate: 0.08, volume: 220, excluded: false },
+            { id: 10, name: 'X-Ray - 4 View', category: 'diagnostics', lastUpdated: '2022-11-01', currentPrice: 195, suggestedPrice: 250, inflationRate: 0.08, volume: 85, excluded: false },
+            { id: 11, name: 'Flea/Tick Prevention', category: 'pharmacy', lastUpdated: '2024-02-01', currentPrice: 45, suggestedPrice: 45, inflationRate: 0, volume: 890, excluded: true },
+            { id: 12, name: 'Heartworm Test', category: 'diagnostics', lastUpdated: '2023-05-15', currentPrice: 35, suggestedPrice: 42, inflationRate: 0.06, volume: 450, excluded: false },
+            { id: 13, name: 'Neuter - Cat', category: 'surgery', lastUpdated: '2023-01-10', currentPrice: 195, suggestedPrice: 225, inflationRate: 0.05, volume: 90, excluded: false },
+            { id: 14, name: 'Neuter - Dog', category: 'surgery', lastUpdated: '2023-01-10', currentPrice: 275, suggestedPrice: 320, inflationRate: 0.05, volume: 70, excluded: false },
+            { id: 15, name: 'Urgent Care Visit', category: 'wellness', lastUpdated: '2023-09-01', currentPrice: 125, suggestedPrice: 155, inflationRate: 0.07, volume: 180, excluded: false }
+        ];
+        
+        function renderServices() {
+            const tbody = document.getElementById('servicesList');
+            let totalImpact = 0;
+            let inflationLagCount = 0;
+            
+            tbody.innerHTML = services.map(s => {
+                const priceChange = s.suggestedPrice - s.currentPrice;
+                const percentChange = s.currentPrice > 0 ? ((priceChange / s.currentPrice) * 100).toFixed(1) : 0;
+                const annualImpact = priceChange * s.volume;
+                totalImpact += annualImpact;
+                
+                const lastUpdate = new Date(s.lastUpdated);
+                const now = new Date();
+                const yearsAgo = (now - lastUpdate) / (1000 * 60 * 60 * 24 * 365);
+                const needsUpdate = yearsAgo > 2 && !s.excluded;
+                if (needsUpdate) inflationLagCount++;
+                
+                let status = 'ok';
+                let statusLabel = 'Current';
+                if (s.excluded) { status = 'excluded'; statusLabel = 'Excluded'; }
+                else if (needsUpdate) { status = 'warning'; statusLabel = 'Needs Update'; }
+                
+                const impactClass = annualImpact > 0 ? 'impact-positive' : '';
+                
+                return `
+                    <tr>
+                        <td><input type="checkbox" class="service-checkbox" data-id="${s.id}"></td>
+                        <td><strong>${s.name}</strong></td>
+                        <td style="text-transform:capitalize">${s.category}</td>
+                        <td>${s.lastUpdated}</td>
+                        <td class="price-current">$${s.currentPrice}</td>
+                        <td class="price-suggested">$${s.suggestedPrice}</td>
+                        <td class="price-change">+${percentChange}%</td>
+                        <td class="${impactClass}">$${annualImpact.toLocaleString()}</td>
+                        <td><span class="status-badge status-${status}">${statusLabel}</span></td>
+                        <td>
+                            <button class="btn btn-success" style="padding:6px 12px;font-size:0.8rem" onclick="approveService(${s.id})">Approve</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+            
+            // Update stats
+            document.getElementById('totalServices').textContent = services.length;
+            document.getElementById('inflationLag').textContent = inflationLagCount;
+            document.getElementById('projectedGain').textContent = '$' + (totalImpact / 1000).toFixed(0) + 'k';
+            
+            // Impact summary
+            const diagnosticsImpact = services.filter(s => s.category === 'diagnostics').reduce((sum, s) => sum + (s.suggestedPrice - s.currentPrice) * s.volume, 0);
+            const surgeryImpact = services.filter(s => s.category === 'surgery').reduce((sum, s) => sum + (s.suggestedPrice - s.currentPrice) * s.volume, 0);
+            const dentistryImpact = services.filter(s => s.category === 'dentistry').reduce((sum, s) => sum + (s.suggestedPrice - s.currentPrice) * s.volume, 0);
+            
+            document.getElementById('impactSummary').innerHTML = `
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+                    <div class="stat-card">
+                        <div class="stat-value green">$${(diagnosticsImpact/1000).toFixed(1)}k</div>
+                        <div class="stat-label">Diagnostics</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value green">$${(surgeryImpact/1000).toFixed(1)}k</div>
+                        <div class="stat-label">Surgery</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value green">$${(dentistryImpact/1000).toFixed(1)}k</div>
+                        <div class="stat-label">Dentistry</div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function approveService(id) {
+            alert('Service approved for price update!');
+        }
+        
+        function approveSelected() {
+            const checked = document.querySelectorAll('.service-checkbox:checked');
+            alert(checked.length + ' services approved for price update!');
+        }
+        
+        document.getElementById('selectAll').addEventListener('change', function() {
+            document.querySelectorAll('.service-checkbox').forEach(cb => cb.checked = this.checked);
+        });
+        
+        renderServices();
+    </script>
+</body>
+</html>
