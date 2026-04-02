@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clinic IQ - Price Management Dashboard</title>
+    <title>Clinic IQ — Rosslyn Veterinary Clinic</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -30,6 +30,7 @@
         .logo-icon { width: 40px; height: 40px; background: linear-gradient(135deg, var(--primary), #8b5cf6); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 1.25rem; }
         .logo-text { font-size: 1.5rem; font-weight: 700; color: var(--gray-900); }
         .logo-text span { color: var(--primary); }
+        .logo-subtitle { font-size: 0.75rem; color: var(--gray-500); margin-top: 0.125rem; }
         .header-actions { display: flex; gap: 1rem; }
         .btn { padding: 0.5rem 1rem; border-radius: 8px; font-weight: 500; cursor: pointer; border: none; transition: all 0.2s; font-size: 0.875rem; }
         .btn-primary { background: var(--primary); color: white; }
@@ -45,21 +46,25 @@
         .stat-change.positive { color: var(--success); }
         .stat-change.warning { color: var(--warning); }
         .card { background: white; border-radius: 12px; border: 1px solid var(--gray-200); margin-bottom: 1.5rem; }
-        .card-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--gray-100); display: flex; justify-content: space-between; align-items: center; }
+        .card-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--gray-100); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; }
         .card-title { font-size: 1.125rem; font-weight: 600; color: var(--gray-900); }
         .card-body { padding: 1.5rem; }
-        .filters { display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+        .filters { display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; }
         .filter-group { display: flex; align-items: center; gap: 0.5rem; }
         .filter-label { font-size: 0.875rem; color: var(--gray-600); }
-        select, input[type="number"] { padding: 0.5rem 0.75rem; border: 1px solid var(--gray-300); border-radius: 6px; font-size: 0.875rem; background: white; }
+        select, input[type="number"], input[type="text"] { padding: 0.5rem 0.75rem; border: 1px solid var(--gray-300); border-radius: 6px; font-size: 0.875rem; background: white; }
         select:focus, input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+        .search-input { width: 220px; }
         .table-container { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--gray-100); }
-        th { font-weight: 600; color: var(--gray-600); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; background: var(--gray-50); }
+        th, td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid var(--gray-100); }
+        th { font-weight: 600; color: var(--gray-600); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; background: var(--gray-50); cursor: pointer; user-select: none; white-space: nowrap; }
+        th:hover { background: var(--gray-100); color: var(--gray-800); }
+        th.sort-asc::after { content: ' ▲'; font-size: 0.65rem; }
+        th.sort-desc::after { content: ' ▼'; font-size: 0.65rem; }
         td { font-size: 0.875rem; }
         .service-name { font-weight: 500; color: var(--gray-900); }
-        .service-category { font-size: 0.75rem; color: var(--gray-500); }
+        .service-code { font-size: 0.75rem; color: var(--gray-500); font-family: monospace; }
         .badge { display: inline-flex; align-items: center; padding: 0.25rem 0.625rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; }
         .badge-success { background: #d1fae5; color: #065f46; }
         .badge-warning { background: #fef3c7; color: #92400e; }
@@ -96,175 +101,564 @@
         .checkbox-item { display: flex; align-items: center; gap: 0.5rem; }
         .checkbox-item input { width: 16px; height: 16px; }
         .inflation-badge { display: inline-flex; padding: 0.125rem 0.5rem; background: var(--gray-100); border-radius: 4px; font-size: 0.75rem; color: var(--gray-600); }
+        .row-count { font-size: 0.8rem; color: var(--gray-500); padding: 0.5rem 1.5rem 1rem; }
+        .loading-msg { text-align: center; padding: 3rem; color: var(--gray-500); }
+        .error-msg { text-align: center; padding: 3rem; color: var(--danger); }
         @media (max-width: 1024px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } .summary-cards { grid-template-columns: 1fr; } .settings-panel { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
     <header class="header">
-        <div class="logo"><div class="logo-icon">CQ</div><div class="logo-text">Clinic<span>IQ</span></div></div>
-        <div class="header-actions"><button class="btn btn-outline" onclick="exportReport()">Export Report</button><button class="btn btn-primary" onclick="applyChanges()">Apply Changes</button></div>
+        <div class="logo">
+            <div class="logo-icon">CQ</div>
+            <div>
+                <div class="logo-text">Clinic<span>IQ</span></div>
+                <div class="logo-subtitle">Rosslyn Veterinary Clinic</div>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-outline" onclick="exportReport()">Export Report</button>
+            <button class="btn btn-primary" onclick="applyChanges()">Apply Changes</button>
+        </div>
     </header>
     <main class="main-content">
         <div class="stats-grid">
-            <div class="stat-card"><div class="stat-label">Total Services</div><div class="stat-value" id="totalServices">0</div></div>
-            <div class="stat-card"><div class="stat-label">Outdated Prices (>2 years)</div><div class="stat-value" id="outdatedCount" style="color:var(--warning)">0</div><div class="stat-change warning">Needs attention</div></div>
-            <div class="stat-card"><div class="stat-label">Potential Revenue Increase</div><div class="stat-value" id="potentialIncrease" style="color:var(--success)">$0</div><div class="stat-change positive">After adjustments</div></div>
-            <div class="stat-card"><div class="stat-label">Pending Approvals</div><div class="stat-value" id="pendingApprovals">0</div></div>
+            <div class="stat-card"><div class="stat-label">Total Services</div><div class="stat-value" id="totalServices">—</div></div>
+            <div class="stat-card"><div class="stat-label">Outdated Prices (&gt;2 years)</div><div class="stat-value" id="outdatedCount" style="color:var(--warning)">—</div><div class="stat-change warning">Needs attention</div></div>
+            <div class="stat-card"><div class="stat-label">Potential Revenue Increase</div><div class="stat-value" id="potentialIncrease" style="color:var(--success)">—</div><div class="stat-change positive">After adjustments</div></div>
+            <div class="stat-card"><div class="stat-label">Pending Approvals</div><div class="stat-value" id="pendingApprovals">—</div></div>
         </div>
         <div class="nav-tabs">
-            <button class="nav-tab active" onclick="showTab('services')">Services</button>
-            <button class="nav-tab" onclick="showTab('analysis')">Analysis</button>
-            <button class="nav-tab" onclick="showTab('approved')">Approved Changes</button>
-            <button class="nav-tab" onclick="showTab('settings')">Settings</button>
+            <button class="nav-tab active" onclick="showTab('services', this)">Services</button>
+            <button class="nav-tab" onclick="showTab('analysis', this)">Analysis</button>
+            <button class="nav-tab" onclick="showTab('approved', this)">Approved Changes</button>
+            <button class="nav-tab" onclick="showTab('settings', this)">Settings</button>
         </div>
+
+        <!-- Services Tab -->
         <div id="services" class="tab-content active">
             <div class="card">
-                <div class="card-header"><h2 class="card-title">Service Pricing Overview</h2>
+                <div class="card-header">
+                    <h2 class="card-title">Service Pricing Overview</h2>
                     <div class="filters">
-                        <div class="filter-group"><span class="filter-label">Category:</span><select id="categoryFilter" onchange="renderTable()"><option value="all">All</option><option value="medical">Medical</option><option value="dental">Dental</option><option value="wellness">Wellness</option><option value="lab">Lab</option><option value="imaging">Imaging</option></select></div>
-                        <div class="filter-group"><span class="filter-label">Status:</span><select id="statusFilter" onchange="renderTable()"><option value="all">All</option><option value="outdated">Outdated</option><option value="current">Current</option><option value="excluded">Excluded</option><option value="approved">Approved</option></select></div>
+                        <div class="filter-group">
+                            <span class="filter-label">Search:</span>
+                            <input type="text" id="searchInput" class="search-input" placeholder="Code or name…" oninput="onSearch(this.value)">
+                        </div>
+                        <div class="filter-group">
+                            <span class="filter-label">Status:</span>
+                            <select id="statusFilter" onchange="renderTable()">
+                                <option value="all">All</option>
+                                <option value="outdated">Outdated</option>
+                                <option value="current">Current</option>
+                                <option value="excluded">Excluded</option>
+                                <option value="approved">Approved</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
-                <div class="card-body"><div class="table-container"><table><thead><tr><th>Service</th><th>Category</th><th>Last Updated</th><th>Current</th><th>Suggested</th><th>Increase</th><th>Inflation Lag</th><th>Status</th><th>Actions</th></tr></thead><tbody id="servicesTable"></tbody></table></div></div>
+                <div class="card-body">
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th onclick="setSort('name')" id="th-name">Code / Name</th>
+                                    <th onclick="setSort('last_modified')" id="th-last_modified">Last Updated</th>
+                                    <th onclick="setSort('price')" id="th-price">Current</th>
+                                    <th id="th-suggested">Suggested</th>
+                                    <th id="th-increase">Increase</th>
+                                    <th id="th-lag">Inflation Lag</th>
+                                    <th onclick="setSort('total_usage')" id="th-total_usage">Total Usage</th>
+                                    <th id="th-status">Status</th>
+                                    <th id="th-actions">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="servicesTable">
+                                <tr><td colspan="9" class="loading-msg">Loading data…</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="row-count" id="rowCount"></div>
+                </div>
             </div>
         </div>
+
+        <!-- Analysis Tab -->
         <div id="analysis" class="tab-content">
             <div class="summary-cards">
                 <div class="summary-card"><div class="summary-card-label">Projected Annual Revenue</div><div class="summary-card-value" id="projectedRevenue">$0</div><div class="summary-card-sub">Based on suggested increases</div></div>
                 <div class="summary-card warning"><div class="summary-card-label">Services Needing Review</div><div class="summary-card-value" id="needsReview">0</div><div class="summary-card-sub">Prices not updated in 2+ years</div></div>
-                <div class="summary-card success"><div class="summary-card-label">Excluded Services</div><div class="summary-card-value" id="excludedCount">0</div><div class="summary-card-sub">Wellness & price-sensitive</div></div>
+                <div class="summary-card success"><div class="summary-card-label">Excluded Services</div><div class="summary-card-value" id="excludedCount">0</div><div class="summary-card-sub">Wellness &amp; zero-price items</div></div>
             </div>
-            <div class="card"><div class="card-header"><h2 class="card-title">Revenue Impact by Category</h2></div><div class="card-body"><div class="table-container"><table><thead><tr><th>Category</th><th>Services</th><th>Avg Current</th><th>Avg Suggested</th><th>Avg Increase</th><th>Monthly Vol</th><th>Monthly Impact</th><th>Annual Impact</th></tr></thead><tbody id="analysisTable"></tbody></table></div></div></div>
+            <div class="card">
+                <div class="card-header"><h2 class="card-title">Revenue Impact by Category</h2></div>
+                <div class="card-body">
+                    <div class="table-container">
+                        <table>
+                            <thead><tr><th>Category</th><th>Services</th><th>Avg Current</th><th>Avg Suggested</th><th>Avg Increase</th><th>Monthly Vol</th><th>Monthly Impact</th><th>Annual Impact</th></tr></thead>
+                            <tbody id="analysisTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
+
+        <!-- Approved Changes Tab -->
         <div id="approved" class="tab-content">
-            <div class="card"><div class="card-header"><h2 class="card-title">Approved Price Changes</h2></div><div class="card-body"><div class="table-container"><table><thead><tr><th>Service</th><th>Old Price</th><th>New Price</th><th>Increase</th><th>Approved By</th><th>Date</th></tr></thead><tbody id="approvedTable"></tbody></table></div></div></div>
+            <div class="card">
+                <div class="card-header"><h2 class="card-title">Approved Price Changes</h2></div>
+                <div class="card-body">
+                    <div class="table-container">
+                        <table>
+                            <thead><tr><th>Code</th><th>Service</th><th>Old Price</th><th>New Price</th><th>Increase</th><th>Date</th></tr></thead>
+                            <tbody id="approvedTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
+
+        <!-- Settings Tab -->
         <div id="settings" class="tab-content">
-            <div class="card"><div class="card-header"><h2 class="card-title">Price Optimization Settings</h2></div><div class="card-body"><div class="settings-panel">
-                <div class="setting-group"><label class="setting-label">Annual Inflation Rate</label><p class="setting-desc">Used to calculate suggested price increases</p><input type="number" id="inflationRate" value="3.2" step="0.1" style="width:80px" onchange="updateSettings()"><span>%</span></div>
-                <div class="setting-group"><label class="setting-label">Price Update Threshold</label><p class="setting-desc">Flag prices older than this (years)</p><input type="number" id="updateThreshold" value="2" style="width:60px" onchange="updateSettings()"><span>years</span></div>
-                <div class="setting-group"><label class="setting-label">Smart Exclusions</label><p class="setting-desc">Exclude these from price increases</p><div class="checkbox-group"><label class="checkbox-item"><input type="checkbox" id="excludeWellness" checked onchange="updateSettings()"> Wellness Exams</label><label class="checkbox-item"><input type="checkbox" id="excludePriceSensitive" checked onchange="updateSettings()"> Price-Sensitive Services</label></div></div>
-                <div class="setting-group"><label class="setting-label">Maximum Single Increase</label><p class="setting-desc">Cap individual increases to avoid shock</p><input type="number" id="maxIncrease" value="15" style="width:80px" onchange="updateSettings()"><span>%</span></div>
-            </div></div></div>
+            <div class="card">
+                <div class="card-header"><h2 class="card-title">Price Optimization Settings</h2></div>
+                <div class="card-body">
+                    <div class="settings-panel">
+                        <div class="setting-group">
+                            <label class="setting-label">Annual Inflation Rate</label>
+                            <p class="setting-desc">Used to calculate suggested price increases</p>
+                            <input type="number" id="inflationRate" value="3.2" step="0.1" style="width:80px" onchange="updateSettings()"><span>%</span>
+                        </div>
+                        <div class="setting-group">
+                            <label class="setting-label">Price Update Threshold</label>
+                            <p class="setting-desc">Flag prices older than this (years)</p>
+                            <input type="number" id="updateThreshold" value="2" style="width:60px" onchange="updateSettings()"><span>years</span>
+                        </div>
+                        <div class="setting-group">
+                            <label class="setting-label">Smart Exclusions</label>
+                            <p class="setting-desc">Automatically exclude these from price increases</p>
+                            <div class="checkbox-group">
+                                <label class="checkbox-item"><input type="checkbox" id="excludeWellness" checked onchange="applyAutoExclusions()"> Wellness Exams (code contains EXAM)</label>
+                                <label class="checkbox-item"><input type="checkbox" id="excludeVacc" checked onchange="applyAutoExclusions()"> Vaccines (code contains VACC)</label>
+                                <label class="checkbox-item"><input type="checkbox" id="excludeZeroPrice" checked onchange="applyAutoExclusions()"> Zero-price services</label>
+                            </div>
+                        </div>
+                        <div class="setting-group">
+                            <label class="setting-label">Maximum Single Increase</label>
+                            <p class="setting-desc">Cap individual increases to avoid shock</p>
+                            <input type="number" id="maxIncrease" value="15" style="width:80px" onchange="updateSettings()"><span>%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </main>
-    <script>
-        const sampleServices = [
-            {id:1,name:'New Patient Visit (Level 4)',category:'medical',price:185,lastUpdated:'2022-03-15',monthlyVolume:45,excluded:false,status:'pending'},
-            {id:2,name:'Established Patient Visit (Level 3)',category:'medical',price:125,lastUpdated:'2023-06-01',monthlyVolume:180,excluded:false,status:'pending'},
-            {id:3,name:'Annual Physical Examination',category:'wellness',price:250,lastUpdated:'2021-01-10',monthlyVolume:30,excluded:true,status:'excluded'},
-            {id:4,name:'Well Child Visit',category:'wellness',price:175,lastUpdated:'2021-05-20',monthlyVolume:25,excluded:true,status:'excluded'},
-            {id:5,name:'Dental Cleaning (Adult)',category:'dental',price:120,lastUpdated:'2023-09-15',monthlyVolume:60,excluded:false,status:'pending'},
-            {id:6,name:'Dental Filling (Composite)',category:'dental',price:195,lastUpdated:'2022-11-01',monthlyVolume:20,excluded:false,status:'pending'},
-            {id:7,name:'Root Canal (Molar)',category:'dental',price:850,lastUpdated:'2023-02-28',monthlyVolume:8,excluded:false,status:'pending'},
-            {id:8,name:'Complete Blood Count (CBC)',category:'lab',price:35,lastUpdated:'2024-01-15',monthlyVolume:200,excluded:false,status:'current'},
-            {id:9,name:'Basic Metabolic Panel',category:'lab',price:45,lastUpdated:'2024-01-15',monthlyVolume:150,excluded:false,status:'current'},
-            {id:10,name:'Lipid Panel',category:'lab',price:55,lastUpdated:'2023-08-01',monthlyVolume:80,excluded:false,status:'pending'},
-            {id:11,name:'Chest X-Ray (2 views)',category:'imaging',price:175,lastUpdated:'2022-06-10',monthlyVolume:35,excluded:false,status:'pending'},
-            {id:12,name:'CT Scan (Abdomen/Pelvis)',category:'imaging',price:650,lastUpdated:'2023-04-20',monthlyVolume:12,excluded:false,status:'pending'},
-            {id:13,name:'MRI (Knee)',category:'imaging',price:850,lastUpdated:'2023-07-01',monthlyVolume:10,excluded:false,status:'pending'},
-            {id:14,name:'Urinalysis',category:'lab',price:25,lastUpdated:'2024-02-01',monthlyVolume:100,excluded:false,status:'current'},
-            {id:15,name:'Thyroid Panel (TSH, T3, T4)',category:'lab',price:95,lastUpdated:'2023-11-01',monthlyVolume:45,excluded:false,status:'pending'},
-            {id:16,name:'Flu Vaccination',category:'medical',price:35,lastUpdated:'2024-09-01',monthlyVolume:150,excluded:true,status:'excluded'},
-            {id:17,name:'Spirometry Test',category:'medical',price:75,lastUpdated:'2022-02-15',monthlyVolume:20,excluded:false,status:'pending'},
-            {id:18,name:'EKG/ECG',category:'medical',price:95,lastUpdated:'2023-05-10',monthlyVolume:40,excluded:false,status:'pending'},
-            {id:19,name:'Office Visit (Brief)',category:'medical',price:65,lastUpdated:'2023-12-01',monthlyVolume:120,excluded:false,status:'pending'},
-            {id:20,name:'Minor Procedure (Skin)',category:'medical',price:250,lastUpdated:'2022-08-20',monthlyVolume:15,excluded:false,status:'pending'},
-            {id:21,name:'Physical Therapy Session',category:'medical',price:125,lastUpdated:'2023-01-15',monthlyVolume:60,excluded:false,status:'pending'},
-            {id:22,name:'Vision Screening',category:'wellness',price:45,lastUpdated:'2021-06-01',monthlyVolume:20,excluded:true,status:'excluded'},
-            {id:23,name:'COVID-19 Vaccination',category:'medical',price:0,lastUpdated:'2024-01-01',monthlyVolume:10,excluded:true,status:'excluded'},
-            {id:24,name:'Hemoglobin A1C',category:'lab',price:45,lastUpdated:'2024-01-20',monthlyVolume:90,excluded:false,status:'current'},
-            {id:25,name:'Ultrasound (Abdominal)',category:'imaging',price:350,lastUpdated:'2023-03-15',monthlyVolume:18,excluded:false,status:'pending'}
-        ];
-        let approvedChanges = [{serviceId:8,serviceName:'Complete Blood Count (CBC)',oldPrice:28,newPrice:35,approvedBy:'Dr. Martinez',date:'2024-01-10'},{serviceId:14,serviceName:'Urinalysis',oldPrice:20,newPrice:25,approvedBy:'Dr. Martinez',date:'2024-01-25'}];
-        let settings = {inflationRate:3.2,updateThreshold:2,maxIncrease:15};
 
-        function calculateSuggestedPrice(service) {
-            if (service.excluded) return service.price;
-            const lastUpdate = new Date(service.lastUpdated);
-            const yearsDiff = (new Date() - lastUpdate) / (365.25*24*60*60*1000);
-            const suggestedIncrease = Math.min(yearsDiff * settings.inflationRate, settings.maxIncrease);
-            return Math.round(service.price * (1 + suggestedIncrease / 100));
+    <script>
+        // ── State ──────────────────────────────────────────────────────────────
+        let allServices = [];
+        let approvedChanges = [];
+        let settings = { inflationRate: 3.2, updateThreshold: 2, maxIncrease: 15 };
+        let sortField = null;
+        let sortDir = 1;   // 1 = asc, -1 = desc
+        let searchQuery = '';
+
+        // Fallback date for items with null last_modified (treat as very old)
+        const UNKNOWN_DATE = '2000-01-01';
+
+        // ── Data loading ───────────────────────────────────────────────────────
+        async function loadData() {
+            try {
+                const resp = await fetch('data.json');
+                if (!resp.ok) throw new Error('HTTP ' + resp.status + ' — ' + resp.statusText);
+                const raw = await resp.json();
+                allServices = raw.map(item => ({
+                    ...item,
+                    _excluded: shouldAutoExclude(item),
+                    _status: 'pending'   // pending | approved | excluded
+                }));
+                // Apply initial exclusion state
+                allServices.forEach(item => {
+                    if (item._excluded) item._status = 'excluded';
+                });
+                renderTable();
+            } catch (e) {
+                document.getElementById('servicesTable').innerHTML =
+                    `<tr><td colspan="9" style="text-align:center;color:var(--danger);padding:2rem">
+                        ⚠️ Could not load data.json: ${e.message}<br>
+                        <span style="font-size:0.8rem;color:var(--gray-500)">Make sure data.json is in the same directory as index.html.</span>
+                    </td></tr>`;
+                document.getElementById('totalServices').textContent = 'Error';
+            }
         }
-        function calculateInflationLag(service) {
-            if (service.excluded) return 0;
-            const yearsDiff = (new Date() - new Date(service.lastUpdated)) / (365.25*24*60*60*1000);
-            return (yearsDiff * settings.inflationRate).toFixed(1);
+
+        function shouldAutoExclude(item) {
+            const exclWellness = document.getElementById('excludeWellness') ? document.getElementById('excludeWellness').checked : true;
+            const exclVacc     = document.getElementById('excludeVacc')     ? document.getElementById('excludeVacc').checked     : true;
+            const exclZero     = document.getElementById('excludeZeroPrice') ? document.getElementById('excludeZeroPrice').checked : true;
+            if (exclZero && item.price === 0) return true;
+            const c = (item.code || '').toUpperCase();
+            if (exclWellness && c.includes('EXAM')) return true;
+            if (exclVacc && c.includes('VACC')) return true;
+            return false;
         }
-        function isOutdated(service) {
-            if (service.excluded) return false;
-            const yearsDiff = (new Date() - new Date(service.lastUpdated)) / (365.25*24*60*60*1000);
-            return yearsDiff > settings.updateThreshold;
-        }
-        function renderTable() {
-            const catFilter = document.getElementById('categoryFilter').value;
-            const statFilter = document.getElementById('statusFilter').value;
-            const tbody = document.getElementById('servicesTable');
-            tbody.innerHTML = '';
-            let outdated = 0, potential = 0, pending = 0, excluded = 0;
-            sampleServices.forEach(s => {
-                const suggested = calculateSuggestedPrice(s);
-                const lag = parseFloat(calculateInflationLag(s));
-                const outdatedFlag = isOutdated(s);
-                let status = s.excluded ? 'excluded' : (s.status === 'approved' ? 'approved' : (outdatedFlag ? 'outdated' : 'current'));
-                if (catFilter !== 'all' && s.category !== catFilter) return;
-                if (statFilter !== 'all' && status !== statFilter) return;
-                if (s.excluded) excluded++; else if (outdatedFlag) outdated++;
-                if (s.status === 'pending') pending++;
-                if (!s.excluded && suggested > s.price) potential += (suggested - s.price) * s.monthlyVolume;
-                const increase = suggested > s.price ? ((suggested - s.price) / s.price * 100).toFixed(1) + '%' : '—';
-                const badgeClass = status === 'outdated' ? 'warning' : status === 'excluded' ? 'excluded' : status === 'approved' ? 'approved' : 'success';
-                tbody.innerHTML += `<tr><td><div class="service-name">${s.name}</div><div class="service-category">#${s.id}</div></td><td>${s.category.charAt(0).toUpperCase()+s.category.slice(1)}</td><td>${s.lastUpdated}</td><td class="price-current">$${s.price}</td><td class="price-suggested">${s.excluded?'—':'$'+suggested}</td><td class="price-increase">${increase}</td><td><span class="inflation-badge">+${lag}%</span></td><td><span class="badge badge-${badgeClass}">${status.charAt(0).toUpperCase()+status.slice(1)}</span></td><td>${!s.excluded&&s.status!=='approved'?`<button class="action-btn approve" onclick="approvePrice(${s.id})">Approve</button><button class="action-btn exclude" onclick="excludeService(${s.id})">Exclude</button>`:s.status==='approved'?'<span class="badge badge-approved">✓</span>':`<button class="action-btn reject" onclick="includeService(${s.id})">Include</button>`}</td></tr>`;
+
+        function applyAutoExclusions() {
+            allServices.forEach(item => {
+                if (item._status !== 'approved') {
+                    const shouldEx = shouldAutoExclude(item);
+                    item._excluded = shouldEx;
+                    item._status = shouldEx ? 'excluded' : 'pending';
+                }
             });
-            document.getElementById('totalServices').textContent = sampleServices.length;
-            document.getElementById('outdatedCount').textContent = outdated;
-            document.getElementById('potentialIncrease').textContent = '$' + potential.toLocaleString();
-            document.getElementById('pendingApprovals').textContent = pending;
+            renderTable();
+        }
+
+        // ── Helpers ────────────────────────────────────────────────────────────
+        function effectiveDate(item) {
+            return item.last_modified || UNKNOWN_DATE;
+        }
+
+        function yearsSince(dateStr) {
+            return (Date.now() - new Date(dateStr).getTime()) / (365.25 * 24 * 3600 * 1000);
+        }
+
+        function calculateSuggested(item) {
+            if (item._excluded) return item.price;
+            const yrs = yearsSince(effectiveDate(item));
+            const pct = Math.min(yrs * settings.inflationRate, settings.maxIncrease);
+            return Math.round(item.price * (1 + pct / 100));
+        }
+
+        function calcInflationLag(item) {
+            if (item._excluded) return 0;
+            return (yearsSince(effectiveDate(item)) * settings.inflationRate).toFixed(1);
+        }
+
+        function isOutdated(item) {
+            if (item._excluded) return false;
+            return yearsSince(effectiveDate(item)) > settings.updateThreshold;
+        }
+
+        function getItemStatus(item) {
+            if (item._status === 'approved') return 'approved';
+            if (item._excluded) return 'excluded';
+            if (isOutdated(item)) return 'outdated';
+            return 'current';
+        }
+
+        function formatDate(d) {
+            return d || 'Unknown';
+        }
+
+        // Simple auto-categorizer by code pattern
+        function getCategory(code) {
+            const c = (code || '').toUpperCase();
+            if (/VACC|VAX|BORDET|DISTEM|PARVO|LEPTO|RABIES|LYME|INFLU/.test(c)) return 'vaccines';
+            if (/EXAM|CONSULT|OFFICE|VISIT|OPX|CHECKUP|WELLNESS/.test(c)) return 'exams';
+            if (/CBC|CHEM|BMP|CMP|T4|TSH|UA|URIN|FECAL|ELISA|PCR|TITER|SMEAR|CULT|PANEL|PROFILE/.test(c)) return 'lab';
+            if (/XRAY|RADS|RADIOGRAPH|ULTRA|ECHO|FLUORO/.test(c)) return 'imaging';
+            if (/DENT|TOOTH|ORAL|PROPHY|EXTRAC/.test(c)) return 'dental';
+            if (/SURG|SPAY|NEUT|OVH|CASTRAT|LAPAR|INCIS|AMPUT|MASS|GROWTH|TUMOR|LACERAT/.test(c)) return 'surgery';
+            if (/GROO|BATH|NAIL|TRIM/.test(c)) return 'grooming';
+            if (/HOSP|BOARD|KENNEL|ICU|CAGE|WARD/.test(c)) return 'boarding';
+            if (/ANES|ANEST|SEDATI/.test(c)) return 'anesthesia';
+            if (/MED|DRUG|RX|TAB|CAP|ML|MG|INJECT|INJ|ANTIBI|ANTI/.test(c)) return 'medications';
+            return 'other';
+        }
+
+        // ── Sorting ────────────────────────────────────────────────────────────
+        function setSort(field) {
+            if (sortField === field) {
+                sortDir = -sortDir;
+            } else {
+                sortField = field;
+                sortDir = 1;
+            }
+            // Update header indicators
+            document.querySelectorAll('th[id^="th-"]').forEach(el => {
+                el.classList.remove('sort-asc', 'sort-desc');
+            });
+            const thEl = document.getElementById('th-' + field);
+            if (thEl) thEl.classList.add(sortDir === 1 ? 'sort-asc' : 'sort-desc');
+            renderTable();
+        }
+
+        function sortedServices(list) {
+            if (!sortField) return list;
+            return [...list].sort((a, b) => {
+                let av = a[sortField], bv = b[sortField];
+                if (sortField === 'last_modified') {
+                    av = av || '1970-01-01';
+                    bv = bv || '1970-01-01';
+                }
+                if (typeof av === 'string') av = av.toLowerCase();
+                if (typeof bv === 'string') bv = bv.toLowerCase();
+                if (av === null || av === undefined) av = '';
+                if (bv === null || bv === undefined) bv = '';
+                if (av < bv) return -sortDir;
+                if (av > bv) return sortDir;
+                return 0;
+            });
+        }
+
+        // ── Search ─────────────────────────────────────────────────────────────
+        let searchTimer = null;
+        function onSearch(val) {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(() => {
+                searchQuery = val.trim().toLowerCase();
+                renderTable();
+            }, 180);
+        }
+
+        // ── Render ─────────────────────────────────────────────────────────────
+        function renderTable() {
+            const statFilter = document.getElementById('statusFilter') ? document.getElementById('statusFilter').value : 'all';
+            const tbody = document.getElementById('servicesTable');
+            if (!tbody) return;
+
+            let outdatedCount = 0, potentialRevenue = 0, pendingCount = 0, excludedCount = 0;
+
+            // Compute per-item derived values for all services (for stats)
+            allServices.forEach(item => {
+                const st = getItemStatus(item);
+                if (st === 'excluded') excludedCount++;
+                else if (st === 'outdated') outdatedCount++;
+                if (item._status === 'pending') pendingCount++;
+                if (!item._excluded && item._status !== 'approved') {
+                    const sug = calculateSuggested(item);
+                    if (sug > item.price) potentialRevenue += (sug - item.price) * (item.monthly_volume || 0);
+                }
+            });
+
+            // Filter
+            let visible = allServices.filter(item => {
+                const st = getItemStatus(item);
+                if (statFilter !== 'all' && st !== statFilter) return false;
+                if (searchQuery) {
+                    const code = (item.code || '').toLowerCase();
+                    const name = (item.name || '').toLowerCase();
+                    if (!code.includes(searchQuery) && !name.includes(searchQuery)) return false;
+                }
+                return true;
+            });
+
+            // Sort
+            visible = sortedServices(visible);
+
+            // Build rows
+            const rows = visible.map(item => {
+                const st = getItemStatus(item);
+                const suggested = calculateSuggested(item);
+                const lag = parseFloat(calcInflationLag(item));
+                const increasePct = (!item._excluded && suggested > item.price)
+                    ? ((suggested - item.price) / item.price * 100).toFixed(1) + '%'
+                    : '—';
+                const badgeClass = st === 'outdated' ? 'warning'
+                    : st === 'excluded' ? 'excluded'
+                    : st === 'approved' ? 'approved'
+                    : 'success';
+                const lastUpdatedDisplay = formatDate(item.last_modified);
+                const lastUpdatedStyle = !item.last_modified ? 'color:var(--gray-400);font-style:italic' : '';
+
+                let actionsHtml = '';
+                if (item._status === 'approved') {
+                    actionsHtml = '<span class="badge badge-approved">✓ Approved</span>';
+                } else if (item._excluded) {
+                    actionsHtml = `<button class="action-btn reject" onclick="includeService(${item.id})">Include</button>`;
+                } else {
+                    actionsHtml = `<button class="action-btn approve" onclick="approvePrice(${item.id})">Approve</button><button class="action-btn exclude" onclick="excludeService(${item.id})">Exclude</button>`;
+                }
+
+                return `<tr>
+                    <td>
+                        <div class="service-name">${escHtml(item.name || item.code)}</div>
+                        <div class="service-code">${escHtml(item.code)}</div>
+                    </td>
+                    <td style="${lastUpdatedStyle}">${lastUpdatedDisplay}</td>
+                    <td class="price-current">$${item.price.toFixed(2)}</td>
+                    <td class="price-suggested">${item._excluded ? '—' : '$' + suggested.toFixed(2)}</td>
+                    <td class="price-increase">${increasePct}</td>
+                    <td><span class="inflation-badge">+${lag}%</span></td>
+                    <td>${(item.total_usage || 0).toLocaleString()}</td>
+                    <td><span class="badge badge-${badgeClass}">${capitalize(st)}</span></td>
+                    <td>${actionsHtml}</td>
+                </tr>`;
+            });
+
+            tbody.innerHTML = rows.join('') || '<tr><td colspan="9" style="text-align:center;color:var(--gray-400);padding:2rem">No services match your filters.</td></tr>';
+
+            // Row count
+            const rcEl = document.getElementById('rowCount');
+            if (rcEl) rcEl.textContent = `Showing ${visible.length.toLocaleString()} of ${allServices.length.toLocaleString()} services`;
+
+            // Stats
+            document.getElementById('totalServices').textContent = allServices.length.toLocaleString();
+            document.getElementById('outdatedCount').textContent = outdatedCount.toLocaleString();
+            document.getElementById('potentialIncrease').textContent = '$' + Math.round(potentialRevenue).toLocaleString();
+            document.getElementById('pendingApprovals').textContent = pendingCount.toLocaleString();
+
             updateProjections();
             renderApprovedTable();
         }
+
         function updateProjections() {
             let annual = 0, needsReview = 0, excluded = 0;
             const catData = {};
-            sampleServices.forEach(s => {
-                if (s.excluded) { excluded++; return; }
-                if (isOutdated(s)) needsReview++;
-                const suggested = calculateSuggestedPrice(s);
-                annual += (suggested - s.price) * s.monthlyVolume * 12;
-                if (!catData[s.category]) catData[s.category] = {svc:0,tc:0,ts:0,v:0};
-                catData[s.category].svc++; catData[s.category].tc+=s.price; catData[s.category].ts+=suggested; catData[s.category].v+=s.monthlyVolume;
+
+            allServices.forEach(item => {
+                const st = getItemStatus(item);
+                if (item._excluded) { excluded++; return; }
+                if (st === 'outdated') needsReview++;
+                const suggested = calculateSuggested(item);
+                const monthlyImpact = (suggested - item.price) * (item.monthly_volume || 0);
+                annual += monthlyImpact * 12;
+
+                const cat = getCategory(item.code);
+                if (!catData[cat]) catData[cat] = { svc: 0, tc: 0, ts: 0, v: 0 };
+                catData[cat].svc++;
+                catData[cat].tc += item.price;
+                catData[cat].ts += suggested;
+                catData[cat].v  += (item.monthly_volume || 0);
             });
-            document.getElementById('projectedRevenue').textContent = '$' + annual.toLocaleString();
-            document.getElementById('needsReview').textContent = needsReview;
-            document.getElementById('excludedCount').textContent = excluded;
+
+            document.getElementById('projectedRevenue').textContent = '$' + Math.round(annual).toLocaleString();
+            document.getElementById('needsReview').textContent = needsReview.toLocaleString();
+            document.getElementById('excludedCount').textContent = excluded.toLocaleString();
+
             const at = document.getElementById('analysisTable');
-            at.innerHTML = '';
-            Object.keys(catData).forEach(c => {
-                const d = catData[c];
-                const avgC = d.tc/d.svc, avgS = d.ts/d.svc, avgI = ((avgS-avgC)/avgC*100).toFixed(1);
-                const mo = (avgS-avgC)*d.v, an = mo*12;
-                at.innerHTML += `<tr><td style="text-transform:capitalize">${c}</td><td>${d.svc}</td><td>$${avgC.toFixed(2)}</td><td style="color:var(--success)">$${avgS.toFixed(2)}</td><td>${avgI}%</td><td>${d.v}</td><td>$${mo.toFixed(0)}</td><td style="color:var(--success);font-weight:600">$${an.toFixed(0)}</td></tr>`;
+            if (!at) return;
+            const sorted = Object.entries(catData).sort((a, b) => {
+                const aImpact = (a[1].ts - a[1].tc) * a[1].v * 12;
+                const bImpact = (b[1].ts - b[1].tc) * b[1].v * 12;
+                return bImpact - aImpact;
             });
+            at.innerHTML = sorted.map(([cat, d]) => {
+                const avgC = d.tc / d.svc;
+                const avgS = d.ts / d.svc;
+                const avgI = ((avgS - avgC) / avgC * 100).toFixed(1);
+                const mo  = (avgS - avgC) * d.v;
+                const an  = mo * 12;
+                return `<tr>
+                    <td style="text-transform:capitalize">${cat}</td>
+                    <td>${d.svc}</td>
+                    <td>$${avgC.toFixed(2)}</td>
+                    <td style="color:var(--success)">$${avgS.toFixed(2)}</td>
+                    <td>${avgI}%</td>
+                    <td>${d.v.toLocaleString()}</td>
+                    <td>$${Math.round(mo).toLocaleString()}</td>
+                    <td style="color:var(--success);font-weight:600">$${Math.round(an).toLocaleString()}</td>
+                </tr>`;
+            }).join('');
         }
+
         function renderApprovedTable() {
             const tbody = document.getElementById('approvedTable');
-            tbody.innerHTML = '';
-            approvedChanges.forEach(c => {
+            if (!tbody) return;
+            if (approvedChanges.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--gray-400);padding:2rem">No approved changes yet.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = approvedChanges.map(c => {
                 const pct = ((c.newPrice - c.oldPrice) / c.oldPrice * 100).toFixed(1);
-                tbody.innerHTML += `<tr><td>${c.serviceName}</td><td>$${c.oldPrice}</td><td style="color:var(--success);font-weight:600">$${c.newPrice}</td><td>+${pct}%</td><td>${c.approvedBy}</td><td>${c.date}</td></tr>`;
-            });
+                return `<tr>
+                    <td><span class="service-code">${escHtml(c.serviceCode)}</span></td>
+                    <td>${escHtml(c.serviceName)}</td>
+                    <td>$${c.oldPrice.toFixed(2)}</td>
+                    <td style="color:var(--success);font-weight:600">$${c.newPrice.toFixed(2)}</td>
+                    <td>+${pct}%</td>
+                    <td>${c.date}</td>
+                </tr>`;
+            }).join('');
         }
-        function showTab(id) { document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active')); document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active')); document.getElementById(id).classList.add('active'); event.target.classList.add('active'); }
+
+        // ── Actions ────────────────────────────────────────────────────────────
         function approvePrice(id) {
-            const s = sampleServices.find(x=>x.id===id);
-            if (s) { s.status = 'approved'; const newP = calculateSuggestedPrice(s); approvedChanges.push({serviceId:id,serviceName:s.name,oldPrice:s.price,newPrice:newP,approvedBy:'Dr. Martinez',date:new Date().toISOString().split('T')[0]}); renderTable(); }
+            const item = allServices.find(x => x.id === id);
+            if (!item) return;
+            const newPrice = calculateSuggested(item);
+            item._status = 'approved';
+            item._excluded = false;
+            approvedChanges.push({
+                serviceId: id,
+                serviceCode: item.code,
+                serviceName: item.name || item.code,
+                oldPrice: item.price,
+                newPrice: newPrice,
+                date: new Date().toISOString().split('T')[0]
+            });
+            renderTable();
         }
-        function excludeService(id) { const s = sampleServices.find(x=>x.id===id); if (s) { s.excluded = true; s.status = 'excluded'; renderTable(); } }
-        function includeService(id) { const s = sampleServices.find(x=>x.id===id); if (s) { s.excluded = false; s.status = 'pending'; renderTable(); } }
-        function updateSettings() { settings.inflationRate = parseFloat(document.getElementById('inflationRate').value); settings.updateThreshold = parseFloat(document.getElementById('updateThreshold').value); settings.maxIncrease = parseFloat(document.getElementById('maxIncrease').value); renderTable(); }
-        function exportReport() { alert('Exporting price optimization report...'); }
-        function applyChanges() { alert('Applying approved price changes...'); }
-        renderTable();
+
+        function excludeService(id) {
+            const item = allServices.find(x => x.id === id);
+            if (!item) return;
+            item._excluded = true;
+            item._status = 'excluded';
+            renderTable();
+        }
+
+        function includeService(id) {
+            const item = allServices.find(x => x.id === id);
+            if (!item) return;
+            item._excluded = false;
+            item._status = 'pending';
+            renderTable();
+        }
+
+        // ── Tab switching ──────────────────────────────────────────────────────
+        function showTab(id, btn) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            if (btn) btn.classList.add('active');
+        }
+
+        // ── Settings ───────────────────────────────────────────────────────────
+        function updateSettings() {
+            settings.inflationRate  = parseFloat(document.getElementById('inflationRate').value)  || 3.2;
+            settings.updateThreshold = parseFloat(document.getElementById('updateThreshold').value) || 2;
+            settings.maxIncrease    = parseFloat(document.getElementById('maxIncrease').value)     || 15;
+            renderTable();
+        }
+
+        // ── Export / Apply ─────────────────────────────────────────────────────
+        function exportReport() {
+            const lines = ['Code,Name,Current Price,Suggested Price,Increase %,Last Modified,Total Usage,Status'];
+            allServices.forEach(item => {
+                const st = getItemStatus(item);
+                const sug = calculateSuggested(item);
+                const inc = (!item._excluded && sug > item.price) ? ((sug - item.price) / item.price * 100).toFixed(1) : '0';
+                lines.push([
+                    item.code, `"${(item.name || '').replace(/"/g, '""')}"`,
+                    item.price.toFixed(2), sug.toFixed(2), inc,
+                    item.last_modified || 'Unknown', item.total_usage || 0, st
+                ].join(','));
+            });
+            const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+            a.download = 'clinic-iq-report-' + new Date().toISOString().split('T')[0] + '.csv';
+            a.click();
+        }
+
+        function applyChanges() {
+            const count = approvedChanges.length;
+            if (count === 0) { alert('No approved changes to apply.'); return; }
+            alert(`Applying ${count} approved price change${count > 1 ? 's' : ''}…`);
+        }
+
+        // ── Utils ──────────────────────────────────────────────────────────────
+        function escHtml(str) {
+            return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        function capitalize(s) {
+            return s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
+        }
+
+        // ── Boot ───────────────────────────────────────────────────────────────
+        loadData();
     </script>
 </body>
 </html>
